@@ -1,7 +1,7 @@
 """
 FastAPI REST Application & Webhooks for Resistome Sentinel: Cancer Targeted Therapy Secondary Resistance Mechanism Arbiter.
 """
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 from .models import ClinicalCasePayload
 from .agents import ResistomeCoordinator
 

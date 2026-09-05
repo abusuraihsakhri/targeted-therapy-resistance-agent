@@ -11,7 +11,6 @@ License: MIT
 import argparse
 import csv
 import datetime
-import json
 import sys
 import uuid
 from typing import Dict, Any, List, Optional
@@ -266,15 +265,28 @@ def main(argv=None):
         return 0
 
     if args.command == "batch":
-        with open(args.input, mode="r", encoding="utf-8-sig") as f:
-            reader = csv.DictReader(f)
-            fieldnames = list(reader.fieldnames or [])
-            rows = list(reader)
+        import os
+        if not os.path.isfile(args.input):
+            print(f"Error: Input file '{args.input}' not found.", file=sys.stderr)
+            return 1
+
+        try:
+            with open(args.input, mode="r", encoding="utf-8-sig") as f:
+                reader = csv.DictReader(f)
+                fieldnames = list(reader.fieldnames or [])
+                rows = list(reader)
+        except (csv.Error, UnicodeDecodeError) as e:
+            print(f"Error: Failed to parse CSV file: {e}", file=sys.stderr)
+            return 1
 
         out_fields = fieldnames + ["overall_status", "total_alerts", "critical_count", "consensus_summary"]
         out_rows = []
         for r in rows:
-            dossier = coordinator.audit_case(dict(r))
+            try:
+                dossier = coordinator.audit_case(dict(r))
+            except (ValueError, TypeError) as e:
+                print(f"Warning: Skipping row due to invalid data: {e}", file=sys.stderr)
+                continue
             row_dict = dict(r)
             row_dict["overall_status"] = dossier["overall_status"]
             row_dict["total_alerts"] = dossier["total_alerts"]

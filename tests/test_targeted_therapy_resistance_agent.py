@@ -3,9 +3,13 @@ Automated Pytest Test Suite for Targeted Therapy Resistance Agent.
 Domain: Clinical & Biomedical AI
 Standard: CAP / CLSI / ISO Standards
 """
+import os
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
+
+# Set audit secret key before importing agents
+os.environ.setdefault("AUDIT_SECRET_KEY", "test-audit-secret-key-2026-secure")
 
 import pytest
 from agents.base import PHIGuard, AuditLogger, SecurityException
@@ -63,3 +67,47 @@ def test_supervisor_consensus_and_audit():
     assert main(["audit", "--task-id", "CLI-TEST-01"]) == 0
     assert main(["chat", "Explain", "specifications"]) == 0
     assert main(["verify-audit"]) == 0
+
+
+def test_audit_trail_requires_secret_key():
+    """AuditTrail must reject initialization without a secret key."""
+    from agents.base import AuditTrail
+    import os
+
+    # Remove the env var temporarily
+    saved = os.environ.pop("AUDIT_SECRET_KEY", None)
+    AuditLogger.reset()
+    try:
+        try:
+            AuditTrail()
+            assert False, "Should have raised SecurityException"
+        except SecurityException:
+            pass
+    finally:
+        if saved:
+            os.environ["AUDIT_SECRET_KEY"] = saved
+            AuditLogger.reset()
+
+
+def test_audit_trail_rejects_short_key():
+    """AuditTrail must reject short secret keys."""
+    from agents.base import AuditTrail
+    try:
+        AuditTrail(secret_key="short")
+        assert False, "Should have raised SecurityException"
+    except SecurityException:
+        pass
+
+
+def test_cli_batch_missing_file():
+    """CLI batch command must handle missing input file gracefully."""
+    result = main(["batch", "-i", "nonexistent_file.csv"])
+    assert result == 1
+
+
+def test_phi_redaction():
+    """PHIGuard.redact_phi must mask sensitive identifiers."""
+    redacted = PHIGuard.redact_phi("Contact patient at 555-123-4567 or MRN-12345")
+    assert "555-123-4567" not in redacted
+    assert "MRN-12345" not in redacted
+    assert "REDACTED" in redacted

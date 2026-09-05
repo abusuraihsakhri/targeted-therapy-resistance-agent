@@ -6,7 +6,7 @@ Standard: AMP / ASCO / CAP Somatic Variant Tiers
 import datetime
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Any
 
 
 class UrgencyLevel(str, Enum):

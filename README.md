@@ -80,18 +80,38 @@ python cli.py --task-id <value> --target <value> --primary <value> --secondary <
 
 ---
 
+## 🔐 Security Configuration
+
+The audit trail requires a secret key to be set via environment variable:
+
+```bash
+# Linux/macOS
+export AUDIT_SECRET_KEY="your-secure-random-key-min-16-chars"
+
+# Windows
+set AUDIT_SECRET_KEY=your-secure-random-key-min-16-chars
+```
+
+**Important:** Never commit secret keys to version control. The application will refuse to start without a valid `AUDIT_SECRET_KEY` (minimum 16 characters).
+
+---
+
 ## 🧪 Testing & Verification
 
 Run the automated test suite:
 
 ```bash
+# Set audit key for tests
+export AUDIT_SECRET_KEY=test-audit-secret-key-2026-secure  # Linux/macOS
+set AUDIT_SECRET_KEY=test-audit-secret-key-2026-secure     # Windows
+
 pytest -v
 ```
 
 Execute high-throughput batch simulation benchmarks:
 
 ```bash
-python simulator.py --tasks 1000 --concurrency 8
+python simulator.py 1000
 ```
 
 ---
@@ -100,5 +120,12 @@ python simulator.py --tasks 1000 --concurrency 8
 
 ```bash
 docker build -t targeted-therapy-resistance-agent .
-docker run -p 8000:8000 targeted-therapy-resistance-agent
+docker run -e AUDIT_SECRET_KEY=your-production-key -p 8000:8000 targeted-therapy-resistance-agent
+```
+
+Using Docker Compose:
+
+```bash
+# Update AUDIT_SECRET_KEY in docker-compose.yml first
+docker-compose up -d
 ```

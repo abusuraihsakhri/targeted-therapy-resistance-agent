@@ -3,9 +3,7 @@ Clinical Algorithmic Engine & Guideline Rules for Resistome Sentinel: Cancer Tar
 Domain: Precision Oncology
 Standard: AMP / ASCO / CAP Somatic Variant Tiers
 """
-import math
-from typing import Dict, Any, List, Optional
-from .models import ClinicalCasePayload, AgentAlert, UrgencyLevel, ClinicalIntegrityStatus
+from typing import Dict, Any, Optional
 
 
 class ClinicalDomainEngine:
