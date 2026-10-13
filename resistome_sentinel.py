@@ -87,7 +87,11 @@ class BypassPathwayDetectorAgent:
     """Specialized Sub-Agent 2 for targeted-therapy-resistance-agent"""
     def evaluate(self, payload: Dict[str, Any]) -> List[AgentAlert]:
         alerts = []
-        is_critical = bool(payload.get("critical_flag", False))
+        raw_critical = payload.get("critical_flag", False)
+        if isinstance(raw_critical, str):
+            is_critical = raw_critical.strip().lower() in ("true", "1", "yes")
+        else:
+            is_critical = bool(raw_critical)
         val2 = float(payload.get("metric_secondary", 5.0))
         if is_critical or val2 > 12.0:
             alerts.append(
@@ -141,7 +145,12 @@ class ResistomeCoordinator:
         critical_count = sum(1 for a in all_alerts if a.severity == Severity.CRITICAL)
         warning_count = sum(1 for a in all_alerts if a.severity == Severity.WARNING)
 
-        overall_status = "CRITICAL_ACTION_REQUIRED" if critical_count > 0 else ("WARNING_ACTIVE" if warning_count > 0 else "CONCORDANT_NORMAL")
+        overall_status = (
+            "CRITICAL_ACTION_REQUIRED" if critical_count > 0
+            else "WARNING_ACTIVE" if warning_count > 0
+            else "ADVISORY_ACTIVE" if all_alerts
+            else "CONCORDANT_NORMAL"
+        )
 
         dossier = {
             "system": "targeted-therapy-resistance-agent",
