@@ -1,131 +1,69 @@
 # Targeted Therapy Resistance Agent
 
-> **Domain:** Clinical Decision Support & Biomedical Computing  
-> **Reference Guidelines & Standards:** `Standard Clinical Formulations & ISO/IEC Quality Frameworks`
+[Open browser demonstration source →](./web/index.html)
 
-<div align="center">
+A research prototype containing deterministic **generic threshold demonstrations** and three Python entry points for synthetic evaluations. Despite the name, it does **not** identify oncogenic variants, detect EGFR or ALK resistance mutations, predict molecular escape pathways, or recommend evidence-based targeted treatments.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.11%20%7C%203.12-3776AB.svg?logo=python&logoColor=white)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.111-009688.svg?logo=fastapi&logoColor=white)
-![Audit Trail](https://img.shields.io/badge/Audit-HMAC--SHA256_Tamper--Evident-brightgreen.svg)
-![Zero-PHI Guard](https://img.shields.io/badge/Guard-Zero--PHI_Outbound-blue.svg)
-![Docker](https://img.shields.io/badge/Docker-Ready-2496ED.svg?logo=docker&logoColor=white)
+**Demonstration only, not clinical decision support.** Numeric boundaries are illustrative and are not published oncology resistance thresholds. Do not enter patient information or use results for clinical decisions.
 
-</div>
+## Browser demonstration
 
----
+Open [web/index.html](web/index.html) locally. The repository root [index.html](index.html) redirects into the web app when GitHub Pages serves the repository root.
 
-## 📖 What It Does
+The browser demo evaluates the generic rules found in agents/workers.py (primary metric greater than 25, secondary metric greater than 12, synthetic critical flag, and selected descriptor keywords). It displays the alerts and allows downloading result JSON. It is JavaScript-only, makes **no HTTP requests**, and stores nothing on a server. No Pyodide is necessary for this small demonstration; browser results do not generate server-side HMAC audit records.
 
-**Targeted Therapy Resistance Agent** is an advanced analytical and computational platform implementing Secondary TKI Resistance Mutations & Bypass Pathway Detector.
+## Python installation
 
----
+Python 3.10 or newer:
 
-## ⚙️ Key Capabilities & Algorithmic Modules
+~~~bash
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install -e ".[server,test]"
+~~~
 
-### 🔬 Core Algorithmic & Evaluation Engines
+On Windows, activate with .venv\Scripts\activate.
 
-- **`Severity`** — dedicated module for severity evaluation and state verification.
-- **`DomainKnowledgeRegistry`**: Enterprise domain rules, guideline matrices, and evidence benchmarks.
-- **`AgentAlert`** — dedicated module for agent alert evaluation and state verification.
-- **`ResistanceMutationScannerAgent`**: Specialized Sub-Agent 1 for targeted-therapy-resistance-agent
-- **`BypassPathwayDetectorAgent`**: Specialized Sub-Agent 2 for targeted-therapy-resistance-agent
-- **`NextLineTherapyAdvisorAgent`**: Specialized Sub-Agent 3 for targeted-therapy-resistance-agent
+These **distinct** interfaces currently have different thresholds and result formats:
 
----
+| Interface | Example command | Rule thresholds |
+| --- | --- | --- |
+| Main supervisor | python cli.py audit --task-id DEMO-01 --target SYNTH-01 --primary 28 --secondary 14 | Primary 25, secondary 12 |
+| Packaged CLI | targeted-therapy-resistance-engine audit --case-id DEMO-01 --primary 26 --secondary 12 --status NORMAL | Primary 20, secondary 10 |
+| Legacy sentinel | python resistome_sentinel.py audit --case-id DEMO-01 --primary 24 --secondary 8 | Primary 20, secondary 12 |
 
-## 💻 CLI Quickstart & Usage
+**Do not treat the interfaces as interchangeable clinical algorithms.**
 
-### 1. Guided Interactive Mode
-```bash
-python cli.py
-```
+To run the main CLI batch mode or its in-memory HMAC audit log:
 
-### 2. Direct Parameterized Evaluation
-```bash
-python cli.py --task-id <value> --target <value> --primary <value> --secondary <value>
-```
+~~~bash
+export AUDIT_SECRET_KEY="$(python -c 'import secrets; print(secrets.token_urlsafe(32))')"
+python cli.py batch --input your_synthetic_data.csv --output results.csv
+python cli.py verify-audit
+~~~
 
-### Parameter Reference
-- `--task-id`: Specifies input measurement or parameter value.
-- `--target`: Specifies input measurement or parameter value.
-- `--primary`: Specifies input measurement or parameter value.
-- `--secondary`: Specifies input measurement or parameter value.
-- `--critical`: Specifies input measurement or parameter value.
-- `--status`: Specifies input measurement or parameter value.
-- `--input`: Specifies input measurement or parameter value.
-- `--output`: Specifies input measurement or parameter value.
+The audit key must be at least 16 characters. Never commit it. The in-memory HMAC-SHA256 chain detects modified signed entries but provides neither durable logs nor evidence that entries have not been deleted or truncated.
 
-### Input Data Schema
+## API and containers
 
-| Field | Description | Requirement |
-|:------|:------------|:------------|
-| `case_id` | Parameter / observation metric | Required |
-| `patient_synthetic_id` | Parameter / observation metric | Required |
-| `metric_primary` | Parameter / observation metric | Required |
-| `metric_secondary` | Parameter / observation metric | Required |
-| `is_stat` | Parameter / observation metric | Required |
-| `status_flag` | Parameter / observation metric | Required |
+Run python cli.py serve for a local FastAPI API on http://127.0.0.1:8000. API docs are at /docs. Main routes are POST /api/audit, POST /api/chat, GET /health, GET /metrics and GET /api/audit/logs.
 
----
+For Docker Compose, set AUDIT_SECRET_KEY in your local environment and run docker compose up --build. Compose now rejects a missing key.
 
-## 🛡️ Security & Enterprise Architecture
+**Do not expose the backend to untrusted networks.** It has no authentication, persistent datastore, or complete PHI de-identification. The regex checks on identifiers and nested attributes cannot establish HIPAA compliance. Use synthetic data only.
 
-* **Zero-PHI Outbound Interceptor:** Active AST and regex inspection blocking SSNs, MRNs, phone numbers, and patient identifiers.
-* **Tamper-Evident HMAC-SHA256 Audit Trail:** Chained, cryptographically signed logs for every evaluation and state transition.
-* **Air-Gapped LLM Reasoning Adapter:** Agnostic integration for local Ollama instances (`llama3`, `mistral`), Claude 3.5 Sonnet, GPT-4o, and deterministic test mocks.
-* **Active Learning Bayesian Calibration:** Dynamic tracker updating worker reliability weights and monitoring Brier calibration drift.
-* **FastAPI & Prometheus Telemetry:** Exposes OpenAPI 3.1 REST endpoints and operational Prometheus metrics (`/metrics`).
+## Tests
 
----
+~~~bash
+python -m pytest -q
+node --check web/app.js
+node --test tests/web.test.cjs
+~~~
 
-## 🔐 Security Configuration
+GitHub Actions tests Python 3.10–3.12 as well as the browser rules. The repository includes a synthetic sample CSV and an illustrative simulation: python simulator.py 100.
 
-The audit trail requires a secret key to be set via environment variable:
+## Scope, technology and license
 
-```bash
-# Linux/macOS
-export AUDIT_SECRET_KEY="your-secure-random-key-min-16-chars"
+The mock LLM is a deterministic response stub; no live external-model inference is implemented. This project has no validated clinical accuracy, calibration, therapy selection, or treatment-response prediction. Browser rules are plain JavaScript. The backend uses Python, Pydantic 2 and optional FastAPI/Uvicorn. The browser demonstration targets modern mobile and desktop browsers; server-side Python is not supported on GitHub Pages.
 
-# Windows
-set AUDIT_SECRET_KEY=your-secure-random-key-min-16-chars
-```
-
-**Important:** Never commit secret keys to version control. The application will refuse to start without a valid `AUDIT_SECRET_KEY` (minimum 16 characters).
-
----
-
-## 🧪 Testing & Verification
-
-Run the automated test suite:
-
-```bash
-# Set audit key for tests
-export AUDIT_SECRET_KEY=test-audit-secret-key-2026-secure  # Linux/macOS
-set AUDIT_SECRET_KEY=test-audit-secret-key-2026-secure     # Windows
-
-pytest -v
-```
-
-Execute high-throughput batch simulation benchmarks:
-
-```bash
-python simulator.py 1000
-```
-
----
-
-## 🐳 Container Deployment
-
-```bash
-docker build -t targeted-therapy-resistance-agent .
-docker run -e AUDIT_SECRET_KEY=your-production-key -p 8000:8000 targeted-therapy-resistance-agent
-```
-
-Using Docker Compose:
-
-```bash
-# Update AUDIT_SECRET_KEY in docker-compose.yml first
-docker-compose up -d
-```
+License: [MIT](LICENSE).
