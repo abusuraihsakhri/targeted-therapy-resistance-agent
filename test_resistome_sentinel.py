@@ -33,5 +33,26 @@ def test_cli():
 
 def test_domain_registry():
     from resistome_sentinel import DomainKnowledgeRegistry
-    assert DomainKnowledgeRegistry.ZERO_PHI_COMPLIANCE is True
+    assert DomainKnowledgeRegistry.ZERO_PHI_COMPLIANCE is False
+    assert DomainKnowledgeRegistry.HIPAA_SAFE_HARBOR == "NOT_VERIFIED"
     assert "PRO" in DomainKnowledgeRegistry.SYSTEM_VERSION
+
+
+def test_false_string_critical_flag_is_not_true():
+    """CSV fields are strings; 'False' must not trigger a critical alert."""
+    from resistome_sentinel import ResistomeCoordinator
+    result = ResistomeCoordinator().audit_case({
+        "case_id": "SYNTH-C1", "metric_primary": "10",
+        "metric_secondary": "2", "critical_flag": "False", "status_text": "NORMAL",
+    })
+    assert result["overall_status"] == "CONCORDANT_NORMAL"
+    assert result["critical_count"] == 0
+
+
+def test_advisory_only_is_not_reported_as_concordant():
+    result = ResistomeCoordinator().audit_case({
+        "case_id": "SYNTH-C2", "metric_primary": 10,
+        "metric_secondary": 2, "status_text": "DISCORDANT",
+    })
+    assert result["total_alerts"] == 1
+    assert result["overall_status"] == "ADVISORY_ACTIVE"

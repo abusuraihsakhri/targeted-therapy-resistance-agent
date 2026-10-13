@@ -3,7 +3,7 @@ Distributed Component Hierarchy & Executive Coordinator for Resistome Sentinel: 
 Domain: Precision Oncology
 """
 import uuid
-from typing import Dict, List
+from typing import Any, Dict, List
 from .models import ClinicalCasePayload, AgentAlert, UrgencyLevel, ClinicalIntegrityStatus
 from .engine import ClinicalDomainEngine
 
@@ -93,7 +93,7 @@ class ResistomeCoordinator:
             "stat_critical_alerts": stat_count,
             "warning_alerts": warn_count,
             "alerts": [a.to_dict() for a in all_alerts],
-            "guideline_standard": "AMP / ASCO / CAP Somatic Variant Tiers",
+            "guideline_standard": ClinicalDomainEngine.GUIDELINE,
             "consensus_summary": f"Multi-agent supervision completed across 3 sub-agents with status [{status.value}].",
         }
 
@@ -105,6 +105,6 @@ class ResistomeCoordinator:
         if "status" in q or "summary" in q:
             return f"Resistome Sentinel: Cancer Targeted Therapy Secondary Resistance Mechanism Arbiter currently tracking {len(self.case_registry)} cases in on-premises memory."
         elif "guideline" in q or "standard" in q:
-            return "Active clinical surveillance operates under AMP / ASCO / CAP Somatic Variant Tiers validated protocols."
+            return "Demonstration thresholds only; no validated oncology guidelines are implemented."
         else:
-            return f"Resistome Sentinel: Cancer Targeted Therapy Secondary Resistance Mechanism Arbiter executive agent online. Zero-PHI air-gapped monitoring active."
+            return f"Local demonstration coordinator ready. Do not enter patient data."

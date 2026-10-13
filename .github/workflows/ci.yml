@@ -24,13 +24,25 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install fastapi uvicorn pydantic pytest
+        python -m pip install -e ".[server,test]"
 
     - name: Run Pytest Suite
       env:
         AUDIT_SECRET_KEY: ci-test-audit-secret-key-2026
       run: |
         pytest -v
+
+    - name: Check browser JavaScript regression suite
+      run: |
+        node --check web/app.js
+        node --test tests/web.test.cjs
+
+    - name: Validate static entrypoint and package CLI
+      run: |
+        python -m compileall -q agents targeted_therapy_resistance_agent
+        targeted-therapy-resistance-engine audit --case-id SYNTH-CI --primary 10 --secondary 5 --status NORMAL
+        test -f index.html
+        test -f web/index.html
 
     - name: Security SAST & Zero-PHI Audit
       env:
